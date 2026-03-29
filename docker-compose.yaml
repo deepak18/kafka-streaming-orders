@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.8.3
+    container_name: kafka
+    ports:
+      - "9092:9092"
+
+    environment:
+      KAFKA_KRAFT_MODE: "true"                        # Allows Kafka to manage its own metadata without Zookeeper
+
+      CLUSTER_ID: 'kafka-cluster-food-delivery'       # ID for the Kafka cluster
+      KAFKA_NODE_ID: 1                                # One broker in the Kafka cluster; also acts as the controller
+
+      KAFKA_PROCESS_ROLES: broker,controller          # Defines the roles for this Kafka instance; in KRAFT mode, a broker can also be a controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093    # Defines which controllers can vote in the controller quorum
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1       # No backup for the offset metadata, default 3 for clusters with 3 or more brokers
+
+
+      # Listeners configuration for both client and controller communication.
+      # The PLAINTEXT listener is for clients,
+      # while the CONTROLLER listener is for inter-broker communication in KRAFT mode.
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+
+    # Persistent storage for Kafka data
+    # mapping the host's kafka_kraft volume to the kafka default path on the container
+    volumes:
+      - kafka_kraft:/var/lib/kafka/data
+
+volumes:
+  kafka_kraft:
